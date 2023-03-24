@@ -1,6 +1,6 @@
-import React, {useCallback, useEffect} from 'react'
-import {useDispatch, useSelector} from 'react-redux'
-import {AppRootStateType} from '../../app/store'
+import React, {useCallback, useEffect} from "react"
+import {useDispatch, useSelector} from "react-redux"
+import {AppRootStateType} from "../../app/store"
 import {
     addTodolistTC,
     changeTodolistFilterAC,
@@ -9,13 +9,13 @@ import {
     FilterValuesType,
     removeTodolistTC,
     TodolistDomainType
-} from './todolists-reducer'
-import {addTaskTC, removeTaskTC, TasksStateType, updateTaskTC} from './tasks-reducer'
-import {TaskStatuses} from '../../api/todolists-api'
-import {Grid, Paper} from '@material-ui/core'
-import {AddItemForm} from '../../components/AddItemForm/AddItemForm'
-import {Todolist} from './Todolist/Todolist'
-import { Redirect } from 'react-router-dom'
+} from "./todolists-reducer"
+import {addTaskTC, removeTaskTC, TasksStateType, updateTaskTC} from "./tasks-reducer"
+import {TaskStatuses} from "../../api/todolists-api"
+import {Grid, Paper} from "@material-ui/core"
+import {AddItemForm} from "../../components/AddItemForm/AddItemForm"
+import {Todolist} from "./Todolist/Todolist"
+import {Redirect} from "react-router-dom"
 
 type PropsType = {
     demo?: boolean
@@ -36,8 +36,8 @@ export const TodolistsList: React.FC<PropsType> = ({demo = false}) => {
         dispatch(thunk)
     }, [])
 
-    const removeTask = useCallback(function (id: string, todolistId: string) {
-        const thunk = removeTaskTC(id, todolistId)
+    const removeTask = useCallback(function (taskId: string, todolistId: string) {
+        const thunk = removeTaskTC({taskId, todolistId})
         dispatch(thunk)
     }, [])
 
@@ -57,7 +57,7 @@ export const TodolistsList: React.FC<PropsType> = ({demo = false}) => {
     }, [])
 
     const changeFilter = useCallback(function (value: FilterValuesType, todolistId: string) {
-        const action = changeTodolistFilterAC({ id: todolistId, filter: value})
+        const action = changeTodolistFilterAC({id: todolistId, filter: value})
         dispatch(action)
     }, [])
 
@@ -77,11 +77,11 @@ export const TodolistsList: React.FC<PropsType> = ({demo = false}) => {
     }, [dispatch])
 
     if (!isLoggedIn) {
-        return <Redirect to={"/login"} />
+        return <Redirect to={"/login"}/>
     }
 
     return <>
-        <Grid container style={{padding: '20px'}}>
+        <Grid container style={{padding: "20px"}}>
             <AddItemForm addItem={addTodolist}/>
         </Grid>
         <Grid container spacing={3}>
@@ -90,7 +90,7 @@ export const TodolistsList: React.FC<PropsType> = ({demo = false}) => {
                     let allTodolistTasks = tasks[tl.id]
 
                     return <Grid item key={tl.id}>
-                        <Paper style={{padding: '10px'}}>
+                        <Paper style={{padding: "10px"}}>
                             <Todolist
                                 todolist={tl}
                                 tasks={allTodolistTasks}
