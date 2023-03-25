@@ -1,42 +1,66 @@
-import React from 'react'
-import {Checkbox, FormControl, FormControlLabel, FormGroup, FormLabel, TextField, Button, Grid} from '@material-ui/core'
-import {useFormik} from 'formik'
-import {useDispatch, useSelector} from 'react-redux'
-import {loginTC} from './auth-reducer'
-import {AppRootStateType} from '../../app/store'
-import { Redirect } from 'react-router-dom'
+import React from "react"
+import {Button, Checkbox, FormControl, FormControlLabel, FormGroup, FormLabel, Grid, TextField} from "@material-ui/core"
+import {FormikHelpers, useFormik} from "formik"
+import {useDispatch, useSelector} from "react-redux"
+import {loginTC} from "./auth-reducer"
+import {AppDispatchType, AppRootStateType, useAppDispatch} from "../../app/store"
+import {Redirect} from "react-router-dom"
+
+type FormValueType = {
+    email: string,
+    password: string,
+    rememberMe: boolean
+}
 
 export const Login = () => {
-    const dispatch = useDispatch()
+    const dispatch = useAppDispatch()
 
     const isLoggedIn = useSelector<AppRootStateType, boolean>(state => state.auth.isLoggedIn);
 
     const formik = useFormik({
         validate: (values) => {
+            // валидация email
             if (!values.email) {
                 return {
-                    email: 'Email is required'
+                    email: "Email is required"
                 }
             }
             if (!values.password) {
                 return {
-                    password: 'Password is required'
+                    password: "Password is required"
                 }
             }
 
         },
         initialValues: {
-            email: '',
-            password: '',
+            email: "",
+            password: "",
             rememberMe: false
         },
-        onSubmit: values => {
-            dispatch(loginTC(values));
+        onSubmit: async (values: FormValueType, formikHelpers: FormikHelpers<FormValueType>) => {
+            // дожидаемся экшн обратно - его результат от бизнеса...
+            // дождались экшн пока санка завершится ---
+            //  -- получаем экшн
+            const action = await dispatch(loginTC(values));
+
+            // debugger
+            // то есть мы смотрим на тип что в res сидит если плохой то отображаем ошибку
+
+            // если этот тип  === негативному сценарию тогда обрабатываем его
+            if (loginTC.rejected.match(action)) {
+                // @ts-ignore
+                if (action.payload?.fieldsErrors?.length) {
+                    // @ts-ignore
+                    const  error = action.payload?.fieldsErrors[0]
+                    // берем у ошибки эти поля
+                    formikHelpers.setFieldError(error.field, error.error)
+                }
+            }
         },
     })
 
     if (isLoggedIn) {
-        return <Redirect to={"/"} />
+        return <Redirect to={"/"}/>
     }
 
 
@@ -46,8 +70,8 @@ export const Login = () => {
                 <FormControl>
                     <FormLabel>
                         <p>
-                            To log in get registered <a href={'https://social-network.samuraijs.com/'}
-                                                        target={'_blank'}>here</a>
+                            To log in get registered <a href={"https://social-network.samuraijs.com/"}
+                                                        target={"_blank"}>here</a>
                         </p>
                         <p>
                             or use common test account credentials:
@@ -73,13 +97,13 @@ export const Login = () => {
                         />
                         {formik.errors.password ? <div>{formik.errors.password}</div> : null}
                         <FormControlLabel
-                            label={'Remember me'}
+                            label={"Remember me"}
                             control={<Checkbox
                                 {...formik.getFieldProps("rememberMe")}
                                 checked={formik.values.rememberMe}
                             />}
                         />
-                        <Button type={'submit'} variant={'contained'} color={'primary'}>Login</Button>
+                        <Button type={"submit"} variant={"contained"} color={"primary"}>Login</Button>
                     </FormGroup>
                 </FormControl>
             </form>

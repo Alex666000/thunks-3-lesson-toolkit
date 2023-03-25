@@ -11,21 +11,19 @@ const initialState: TasksStateType = {}
 // первым параметром название редюсера и санки - во 2 параметр придут параметры что прихолили в ТС
 // если придет несколько параметров то их передаем  внутри объекта payload
 // интерфейс взаимодействия с санкой thunkAPI
-export const fetchTasksTC = createAsyncThunk("tasks/fetchTasks", (todolistId: string, thunkAPI) => {
+export const fetchTasksTC = createAsyncThunk("tasks/fetchTasks", async (todolistId: string, thunkAPI) => {
     thunkAPI.dispatch(setAppStatusAC({status: "loading"}))
-    return todolistsAPI.getTasks(todolistId)
-        .then((res) => {
-            const tasks = res.data.items
-            thunkAPI.dispatch(setAppStatusAC({status: "succeeded"}))
-            // return thunkAPI.dispatch(setTasksAC({tasks, todolistId}))
-            // возвращаем данные:
-            return {tasks, todolistId}
-        })
+    const res = await todolistsAPI.getTasks(todolistId);
+    const tasks = res.data.items
+    thunkAPI.dispatch(setAppStatusAC({status: "succeeded"}))
+    // return thunkAPI.dispatch(setTasksAC({tasks, todolistId}))
+    // возвращаем данные:
+    return {tasks, todolistId}
 })
 // определяем 1 параметр который принимаем
 export const removeTaskTC = createAsyncThunk("tasks/removeTask", (param: { taskId: string, todolistId: string }, thunkAPI) => {
     // пользуемся этим параметром
-   return todolistsAPI.deleteTask(param.todolistId, param.taskId)
+    return todolistsAPI.deleteTask(param.todolistId, param.taskId)
         // возвращаем в 1 строку этот объект {taskId: param.taskId, todolistId: param.todolistId}
         .then(res => ({taskId: param.taskId, todolistId: param.todolistId}))
 })
