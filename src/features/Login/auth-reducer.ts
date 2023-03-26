@@ -1,13 +1,22 @@
-import {Dispatch} from "redux"
-import {SetAppErrorActionType, setAppStatusAC, SetAppStatusActionType} from "../../app/app-reducer"
+import {setAppStatusAC} from "../../app/app-reducer"
 import {authAPI, FieldErrorType, LoginParamsType} from "../../api/todolists-api"
 import {handleServerAppError, handleServerNetworkError} from "../../utils/error-utils"
 import {createAsyncThunk, createSlice, PayloadAction} from "@reduxjs/toolkit"
-import {addTodolistAC} from "../TodolistsList/todolists-reducer";
 import {AxiosError} from "axios";
+// называем санку-тулкита так: сначала name слайса,потом название санки без ТС
+// первым параметром принимает: название редюсера и санки
+//  во 2 параметр придут параметры что прихолили в ТС:
+// если придет несколько параметров то их передаем  внутри объекта payload
+// интерфейс взаимодействия с санкой thunkAPI - деструктурируем его
+// типизируем санку если она обрабатывает ошибки которые нужны на UI - формик дожидается результата action если
+// если может быть ошибка у пользователя при результате отработки санки этой то try catch оборачиваем
+// и возвращаем return (из АС что принадлежит мне моей санки...) иначе в extraReducers в payload будет ошибка ТС
+// удаляем типы снизу АС-ов..
+// переносим логику АС из reducers в extraReducers, а АС из reducers удаляем, удаляем АС их экспорта этого файла, фиксим импорты и тесты
+// проверяем как работате в браузере
 
-export const loginTC = createAsyncThunk<{isLoggedIn: boolean}, LoginParamsType, {
-    rejectValue?: {error: string[], fieldsErrors?: Array<FieldErrorType>}
+export const loginTC = createAsyncThunk<undefined, LoginParamsType, {
+    rejectValue?: { error: string[], fieldsErrors?: Array<FieldErrorType> }
 }>("auth/login", async (param, thunkAPI) => {
     thunkAPI.dispatch(setAppStatusAC({status: "loading"}))
     try {
@@ -15,7 +24,7 @@ export const loginTC = createAsyncThunk<{isLoggedIn: boolean}, LoginParamsType, 
         if (res.data.resultCode === 0) {
             thunkAPI.dispatch(setAppStatusAC({status: "succeeded"}))
             // thunkAPI.dispatch(setIsLoggedInAC({value: true}))
-            return {isLoggedIn: true}
+            return
         } else {
             handleServerAppError(res.data, thunkAPI.dispatch)
             // так как с UI придет ошибка - обработаем её т к не попали в if
@@ -37,6 +46,24 @@ export const loginTC = createAsyncThunk<{isLoggedIn: boolean}, LoginParamsType, 
     }
 })
 
+export const logoutTC = createAsyncThunk("auth/logout", async (param, {dispatch, rejectWithValue}) => {
+    dispatch(setAppStatusAC({status: "loading"}))
+    try {
+        const res = await authAPI.logout()
+        if (res.data.resultCode === 0) {
+            dispatch(setIsLoggedInAC({value: false}))
+            dispatch(setAppStatusAC({status: "succeeded"}))
+            return
+        } else {
+            handleServerAppError(res.data, dispatch)
+            return rejectWithValue({})
+        }
+    } catch (error) {
+        handleServerNetworkError(error, dispatch)
+        return rejectWithValue({})
+    }
+})
+
 const slice = createSlice({
     name: "auth",
     initialState: {
@@ -48,10 +75,13 @@ const slice = createSlice({
         }
     },
     extraReducers: (builder) => {
+        // action не используемся можно удалить но не будем:
         builder.addCase(loginTC.fulfilled, (state, action) => {
-            // if (action.payload) {
-            state.isLoggedIn = action.payload.isLoggedIn
-            // }
+            state.isLoggedIn = true
+        });
+        // action не используемся можно удалить но не будем:
+        builder.addCase(logoutTC.fulfilled, (state, action) => {
+            state.isLoggedIn = false
         });
     }
 })
@@ -60,23 +90,9 @@ export const authReducer = slice.reducer
 export const {setIsLoggedInAC} = slice.actions
 
 // thunks
-export const logoutTC = () => (dispatch: Dispatch) => {
-    dispatch(setAppStatusAC({status: "loading"}))
-    authAPI.logout()
-        .then(res => {
-            if (res.data.resultCode === 0) {
-                dispatch(setIsLoggedInAC({value: false}))
-                dispatch(setAppStatusAC({status: "succeeded"}))
-            } else {
-                handleServerAppError(res.data, dispatch)
-            }
-        })
-        .catch((error) => {
-            handleServerNetworkError(error, dispatch)
-        })
-}
 
 
+/*
 const a1 = {
     type: "SET-IS-LOGIN-IN",
     payload: {
@@ -90,6 +106,7 @@ const a2 = {
         age: 12
     }
 }
+*/
 
 /*
 - DTO – переход объектом из одного слоя в другой чтобы они были стандартизированы
